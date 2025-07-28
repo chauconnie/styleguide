@@ -2,67 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Style Guide Chatbot</title>
+  <title>Firsthand Writing Style Guide Chatbot</title>
   <style>
-    body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 2rem; }
-    #chatbox { background: white; padding: 1rem; border-radius: 8px; width: 500px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .message { margin: 0.5rem 0; }
-    .user { text-align: right; color: white; background: #007bff; border-radius: 12px; padding: 0.5rem 1rem; display: inline-block; }
-    .bot { background: #eee; border-radius: 12px; padding: 0.5rem 1rem; display: inline-block; }
-    form { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    input { flex: 1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; }
-    button { padding: 0.5rem 1rem; border: none; background: #007bff; color: white; border-radius: 6px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #1A1A1A;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    header a {
+      color: #88c0f0;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .chat-container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .messages {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 6px;
+    }
+    .user {
+      background: #e8f0fe;
+      text-align: right;
+    }
+    .bot {
+      background: #f1f1f1;
+      text-align: left;
+    }
+    form {
+      display: flex;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px 0 0 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      background: #1A1A1A;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #333;
+    }
   </style>
 </head>
 <body>
-  <div id="chatbox">
-    <div id="messages"></div>
-    <form id="form">
-      <input id="input" placeholder="Ask about the Firsthand Writing Style Guide..." />
-      <button>Send</button>
+
+  <header>
+    <h1>Firsthand Writing Style Guide</h1>
+    <a href="https://www.notion.so/firsthandlabs/Firsthand-Writing-Style-Guide-19a0efa8732880f69a79d3ea42dee27f?source=copy_link" target="_blank">
+      View Full Guide →
+    </a>
+  </header>
+
+  <div class="chat-container">
+    <div class="messages" id="messages"></div>
+    <form id="chat-form">
+      <input type="text" id="user-input" placeholder="Ask me about our writing style..." required />
+      <button type="submit">Send</button>
     </form>
   </div>
 
   <script>
-    const form = document.getElementById("form");
-    const input = document.getElementById("input");
-    const messages = document.getElementById("messages");
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('user-input');
+    const messages = document.getElementById('messages');
 
-    function addMessage(text, isUser = false) {
-      const div = document.createElement("div");
-      div.className = "message";
-      div.innerHTML = `<span class="${isUser ? "user" : "bot"}">${text}</span>`;
-      messages.appendChild(div);
-    }
+    const endpoint = "https://n8n.dev.private.firsthand.ai/webhook/search-guides";
 
-    form.addEventListener("submit", async (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const userMessage = input.value.trim();
-      if (!userMessage) return;
+      const question = input.value.trim();
+      if (!question) return;
 
-      addMessage(userMessage, true);
-      input.value = "";
+      appendMessage('user', question);
+      input.value = '';
 
       try {
-        const response = await fetch("https://corsproxy.io/?" + encodeURIComponent("https://n8n-webhook.dev.firsthand.ai/webhook/search-guides"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ query: userMessage })
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
         });
 
-        const result = await response.json();
-        if (result.answer) {
-          addMessage(result.answer);
-        } else {
-          addMessage("Sorry, no answer found.");
-        }
-      } catch (err) {
-        console.error(err);
-        addMessage("❌ Error reaching the server. Is n8n listening for a test event?");
+        const data = await response.json();
+        appendMessage('bot', data.answer || "Sorry, I couldn't find anything.");
+      } catch (error) {
+        appendMessage('bot', 'Error contacting the guide service.');
+        console.error(error);
       }
     });
+
+    function appendMessage(sender, text) {
+      const msg = document.createElement('div');
+      msg.className = `message ${sender}`;
+      msg.textContent = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
   </script>
+
 </body>
 </html>
