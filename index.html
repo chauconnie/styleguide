@@ -3,100 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Style Guide Assistant</title>
+  <title>Style Guide Chatbot</title>
   <style>
     body {
-      background: #f8f8f8;
       font-family: sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
       display: flex;
       justify-content: center;
       padding: 2rem;
     }
     .chat-container {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      width: 500px;
+      width: 100%;
+      max-width: 600px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .messages {
       padding: 1rem;
+      height: 400px;
+      overflow-y: auto;
+      flex: 1;
     }
     .message {
+      padding: 0.5rem 1rem;
       margin: 0.5rem 0;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
     }
-    .message.user {
-      text-align: right;
-      font-weight: bold;
+    .left {
+      background-color: #eee;
+      align-self: flex-start;
     }
-    .message.bot {
-      text-align: left;
-      color: #333;
+    .right {
+      background-color: #007bff;
+      color: white;
+      align-self: flex-end;
     }
-    #chat-form {
+    .input-area {
       display: flex;
-      margin-top: 1rem;
+      border-top: 1px solid #ddd;
     }
-    #input {
+    input {
       flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 1rem;
+      border: none;
+      font-size: 1rem;
     }
     button {
-      margin-left: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #007bff;
+      padding: 1rem;
+      background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 4px;
+      font-size: 1rem;
       cursor: pointer;
     }
     button:hover {
-      background: #0056b3;
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
     <div class="messages" id="messages"></div>
-    <form id="chat-form">
-      <input type="text" id="input" placeholder="Ask me about the style guide..." autocomplete="off" />
-      <button type="submit">Send</button>
-    </form>
+    <div class="input-area">
+      <input type="text" id="message-input" placeholder="Ask me about the style guide..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
 
   <script>
-  const endpoint = "https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides"; // Use your exact test URL
+    const endpoint = "https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides"; // Replace with your actual test URL if it changes
 
-  async function sendMessage() {
-    const input = document.getElementById("message-input");
-    const message = input.value.trim();
-    if (!message) return;
+    async function sendMessage() {
+      const input = document.getElementById("message-input");
+      const message = input.value.trim();
+      if (!message) return;
 
-    addMessage(message, "right");
-    input.value = "";
+      addMessage(message, "right");
+      input.value = "";
 
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ query: message })
-      });
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: message }),
+        });
 
-      const data = await response.json();
-      addMessage(data.answer || "Sorry, I couldn't find an answer.", "left");
-    } catch (err) {
-      addMessage("Oops! The server isn't listening. Click 'Listen for test event' in n8n.", "left");
+        const data = await response.json();
+        const reply = data.answer || "Sorry, I couldn't find an answer.";
+        addMessage(reply, "left");
+      } catch (error) {
+        addMessage("❌ Error reaching the server. Is n8n listening for a test event?", "left");
+        console.error("Request failed:", error);
+      }
     }
-  }
 
-  function addMessage(text, side) {
-    const messages = document.getElementById("messages");
-    const messageElem = document.createElement("div");
-    messageElem.className = `message ${side}`;
-    messageElem.innerText = text;
-    messages.appendChild(messageElem);
-  }
-</script>
+    function addMessage(text, side) {
+      const messages = document.getElementById("messages");
+      const msg = document.createElement("div");
+      msg.className = `message ${side}`;
+      msg.innerText = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
+  </script>
 </body>
 </html>
