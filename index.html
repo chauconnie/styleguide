@@ -1,86 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Style Guide Chat</title>
+  <title>Style Guide Assistant</title>
   <style>
     body {
       font-family: sans-serif;
-      padding: 2rem;
-    }
-    #chat {
       max-width: 600px;
-      margin: auto;
+      margin: 40px auto;
+    }
+
+    .chat {
       border: 1px solid #ddd;
-      padding: 1rem;
-      border-radius: 10px;
+      border-radius: 8px;
+      padding: 10px;
     }
-    .bubble {
-      padding: 0.5rem 1rem;
-      margin: 0.5rem 0;
-      border-radius: 10px;
+
+    .message {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 6px;
     }
+
     .user {
-      background-color: #007bff;
+      background: #007aff;
       color: white;
       text-align: right;
     }
+
     .bot {
-      background-color: #eee;
-      color: #333;
+      background: #f1f1f1;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    form {
+      display: flex;
+      margin-top: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px 0 0 6px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #007aff;
+      color: white;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #005ecb;
     }
   </style>
 </head>
 <body>
-  <div id="chat">
-    <div id="messages"></div>
-    <form id="chat-form">
-      <input type="text" id="query" placeholder="Ask about the style guide..." required style="width: 80%;" />
-      <button type="submit">Send</button>
-    </form>
-  </div>
+  <h2>Ask about the style guide</h2>
+  <div class="chat" id="chat"></div>
+  <form id="form">
+    <input type="text" id="input" placeholder="Ask me about the style guide..." required />
+    <button type="submit">Send</button>
+  </form>
 
   <script>
-    const form = document.getElementById("chat-form");
-    const messages = document.getElementById("messages");
-    const input = document.getElementById("query");
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+
+    const endpoint = "https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides";
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      div.innerText = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const query = input.value.trim();
       if (!query) return;
 
-      // Show user message
-      const userMsg = document.createElement("div");
-      userMsg.className = "bubble user";
-      userMsg.textContent = query;
-      messages.appendChild(userMsg);
-
+      addMessage("user", query);
       input.value = "";
 
-      // Call n8n test webhook
       try {
-        const res = await fetch("https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides", {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query })
+          body: JSON.stringify({ query }),
         });
 
-        if (!res.ok) throw new Error("n8n is not listening. Is test mode active?");
+        if (!res.ok) throw new Error("Server error: " + res.status);
+
         const data = await res.json();
-
-        const botMsg = document.createElement("div");
-        botMsg.className = "bubble bot";
-        botMsg.textContent = data.answer || "Sorry, I couldn't find an answer.";
-        messages.appendChild(botMsg);
-
+        addMessage("bot", data.answer || "No answer found.");
       } catch (err) {
-        console.error("Fetch error:", err); // add this
-        const errorMsg = document.createElement("div");
-        errorMsg.className = "bubble bot";
-        errorMsg.textContent = `❌ Error reaching the server. Is n8n listening for a test event?`;
-        messages.appendChild(errorMsg);
+        console.error(err);
+        addMessage("error", "❌ Error reaching the server. Is n8n listening for a test event?");
       }
     });
   </script>
