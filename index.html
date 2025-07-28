@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Style Guide Assistant</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
+    .chatbox { max-width: 500px; margin: auto; background: white; padding: 1em; border-radius: 8px; }
+    .messages { margin-bottom: 1em; min-height: 150px; }
+    .msg { margin: 0.5em 0; }
+    .msg.bot { color: #444; }
+    .msg.user { text-align: right; color: #007aff; }
+    input { width: 100%; padding: 0.5em; border: 1px solid #ccc; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="chatbox">
+    <div class="messages" id="messages"></div>
+    <input type="text" id="userInput" placeholder="Ask me about the style guide..." />
+  </div>
+
+  <script>
+    const webhook = "YOUR_WEBHOOK_URL"; // replace this
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("userInput");
+
+    input.addEventListener("keypress", async function(e) {
+      if (e.key === "Enter") {
+        const text = input.value;
+        if (!text.trim()) return;
+        input.value = "";
+
+        const userMsg = document.createElement("div");
+        userMsg.className = "msg user";
+        userMsg.textContent = text;
+        messages.appendChild(userMsg);
+
+        const botMsg = document.createElement("div");
+        botMsg.className = "msg bot";
+        botMsg.textContent = "Thinking...";
+        messages.appendChild(botMsg);
+
+        const res = await fetch(webhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: text })
+        });
+
+        const data = await res.json();
+        botMsg.textContent = data.answer || "Sorry, I didn’t get that.";
+      }
+    });
+  </script>
+</body>
+</html>
