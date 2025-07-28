@@ -44,7 +44,7 @@
       input.value = "";
 
       try {
-        const response = await fetch("https://corsproxy.io/?" + encodeURIComponent("https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides"), {
+        const response = await fetch("https://corsproxy.io/?" + encodeURIComponent("https://n8n-webhook.dev.firsthand.ai/webhook/search-guides"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
