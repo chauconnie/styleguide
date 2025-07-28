@@ -76,6 +76,7 @@
         messages.appendChild(botMsg);
 
       } catch (err) {
+        console.error("Fetch error:", err); // add this
         const errorMsg = document.createElement("div");
         errorMsg.className = "bubble bot";
         errorMsg.textContent = `❌ Error reaching the server. Is n8n listening for a test event?`;
