@@ -1,53 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Style Guide Assistant</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
-    .chatbox { max-width: 500px; margin: auto; background: white; padding: 1em; border-radius: 8px; }
-    .messages { margin-bottom: 1em; min-height: 150px; }
-    .msg { margin: 0.5em 0; }
-    .msg.bot { color: #444; }
-    .msg.user { text-align: right; color: #007aff; }
-    input { width: 100%; padding: 0.5em; border: 1px solid #ccc; border-radius: 4px; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .chat-container {
+      width: 90%;
+      max-width: 700px;
+      height: 500px;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .message {
+      margin-bottom: 12px;
+    }
+    .message.user {
+      text-align: right;
+      font-weight: bold;
+    }
+    .message.bot {
+      text-align: left;
+      color: #444;
+    }
+    form {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 16px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+    }
+    button {
+      padding: 0 20px;
+      background-color: #007aff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
-  <div class="chatbox">
+  <div class="chat-container">
     <div class="messages" id="messages"></div>
-    <input type="text" id="userInput" placeholder="Ask me about the style guide..." />
+    <form id="chat-form">
+      <input type="text" id="input" placeholder="Ask me about the style guide..." autocomplete="off"/>
+      <button type="submit">Send</button>
+    </form>
   </div>
 
   <script>
-    const webhook = "YOUR_WEBHOOK_URL"; // replace this
+    const endpoint = "https://n8n.dev.private.firsthand.ai/webhook/search-guides";
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("input");
     const messages = document.getElementById("messages");
-    const input = document.getElementById("userInput");
 
-    input.addEventListener("keypress", async function(e) {
-      if (e.key === "Enter") {
-        const text = input.value;
-        if (!text.trim()) return;
-        input.value = "";
+    function addMessage(text, type) {
+      const msg = document.createElement("div");
+      msg.className = `message ${type}`;
+      msg.innerText = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
 
-        const userMsg = document.createElement("div");
-        userMsg.className = "msg user";
-        userMsg.textContent = text;
-        messages.appendChild(userMsg);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userInput = input.value.trim();
+      if (!userInput) return;
+      addMessage(userInput, "user");
+      input.value = "";
 
-        const botMsg = document.createElement("div");
-        botMsg.className = "msg bot";
-        botMsg.textContent = "Thinking...";
-        messages.appendChild(botMsg);
-
-        const res = await fetch(webhook, {
+      try {
+        const res = await fetch(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: text })
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ query: userInput })
         });
 
         const data = await res.json();
-        botMsg.textContent = data.answer || "Sorry, I didn’t get that.";
+        const reply = data.answer || "Sorry, I couldn't find an answer.";
+        addMessage(reply, "bot");
+      } catch (err) {
+        addMessage("Error reaching the server.", "bot");
+        console.error(err);
       }
     });
   </script>
