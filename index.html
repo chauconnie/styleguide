@@ -64,50 +64,39 @@
   </div>
 
   <script>
-    const endpoint = "https://n8n.dev.private.firsthand.ai/webhook-test/search-guides"; // ✅ Replace if needed
-    const form = document.getElementById("chat-form");
-    const input = document.getElementById("input");
-    const messages = document.getElementById("messages");
+  const endpoint = "https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides"; // Use your exact test URL
 
-    function addMessage(text, type) {
-      const msg = document.createElement("div");
-      msg.className = "message " + type;
-      msg.innerText = text;
-      messages.appendChild(msg);
-      messages.scrollTop = messages.scrollHeight;
+  async function sendMessage() {
+    const input = document.getElementById("message-input");
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, "right");
+    input.value = "";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query: message })
+      });
+
+      const data = await response.json();
+      addMessage(data.answer || "Sorry, I couldn't find an answer.", "left");
+    } catch (err) {
+      addMessage("Oops! The server isn't listening. Click 'Listen for test event' in n8n.", "left");
     }
+  }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const userInput = input.value.trim();
-      if (!userInput) return;
-      addMessage(userInput, "user");
-      input.value = "";
-
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ query: userInput })
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Server responded with error:", res.status, errorText);
-          throw new Error("Non-OK response");
-        }
-
-        const data = await res.json();
-        const reply = data.answer || "Sorry, I couldn't find an answer.";
-        addMessage(reply, "bot");
-
-      } catch (err) {
-        console.error("Fetch error:", err);
-        addMessage("Error reaching the server.", "bot");
-      }
-    });
-  </script>
+  function addMessage(text, side) {
+    const messages = document.getElementById("messages");
+    const messageElem = document.createElement("div");
+    messageElem.className = `message ${side}`;
+    messageElem.innerText = text;
+    messages.appendChild(messageElem);
+  }
+</script>
 </body>
 </html>
