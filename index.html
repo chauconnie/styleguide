@@ -78,7 +78,27 @@
       align-self: flex-end;
       background: #3b82f6;
       color: white;
+    }
+
+    .faq-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .faq-button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
       cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .faq-button:hover {
+      background: #2563eb;
     }
 
     footer {
@@ -127,42 +147,26 @@
     <div class="message bot">
       Welcome to the Firsthand Writing Style Guide Assistant! 
       I can help you with questions about our writing standards, voice and tone, grammar guidelines, and more. 
-      Type a question, or type <b>"show me FAQ"</b> to see all questions you can click.
+      Ask me anything, or click "Show FAQ" to browse common questions.
     </div>
   </main>
 
   <footer>
     <input id="userInput" type="text" placeholder="Ask me about our writing style guide..." />
-    <button onclick="sendMessage()">&#10148;</button>
+    <button onclick="handleSend()">&#10148;</button>
   </footer>
 
   <script>
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
 
-    const faq = [
+    // Example FAQ list
+    const faqs = [
       "How should titles and headers be capitalized?",
       "How should tooltips and placeholder text be capitalized?",
       "How should button text be capitalized?",
-      "What case should field labels use?",
-      "How should capitalization be handled in lists and tables?",
-      "Are contractions allowed in writing?",
       "How should numbers be written?",
-      "When should punctuation be used in tooltips or help text?",
-      "Should we use the Oxford comma?",
-      "Should optional plurals be shown with (s)?",
-      "How should formatting like bold and italics be used?",
-      "What tone should we use?",
-      "How should users be addressed?",
-      "How should button labels be formatted?",
-      "How should we write error messages?",
-      "How should we write confirmation or success messages?",
-      "What’s the format for help or instructional text?",
       "What is the format for placeholder text?",
-      "How should tooltip content be written?",
-      "How should link text be written?",
-      "How are proper nouns handled?",
-      "How are identifiers displayed?",
       "What format is used for dates?",
       "How should titles be formatted?"
     ];
@@ -175,24 +179,29 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function appendFAQ() {
-      faq.forEach(q => {
-        const msg = document.createElement('div');
-        msg.className = 'message user';
-        msg.textContent = q;
-        msg.onclick = () => sendQuery(q);
-        chat.appendChild(msg);
+    function showFAQ() {
+      const faqContainer = document.createElement('div');
+      faqContainer.className = 'faq-container';
+      faqs.forEach(question => {
+        const btn = document.createElement('button');
+        btn.className = 'faq-button';
+        btn.textContent = question;
+        btn.onclick = () => sendMessage(question);
+        faqContainer.appendChild(btn);
       });
+      chat.appendChild(faqContainer);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    async function sendQuery(text) {
+    async function sendMessage(text) {
       appendMessage(text, 'user');
+      input.value = '';
+
       try {
         const res = await fetch('https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: text }) // always sends plain string
+          body: JSON.stringify({ query: text }) // Always send `query`
         });
         const data = await res.json();
         appendMessage(data.answer || 'No answer found.', 'bot');
@@ -201,20 +210,19 @@
       }
     }
 
-    async function sendMessage() {
+    function handleSend() {
       const text = input.value.trim();
       if (!text) return;
-
-      input.value = '';
       if (text.toLowerCase().includes('faq')) {
-        appendFAQ();
+        showFAQ();
+        input.value = '';
       } else {
-        sendQuery(text);
+        sendMessage(text);
       }
     }
 
     input.addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') sendMessage();
+      if (e.key === 'Enter') handleSend();
     });
   </script>
 </body>
