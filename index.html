@@ -78,6 +78,7 @@
       align-self: flex-end;
       background: #3b82f6;
       color: white;
+      cursor: pointer;
     }
 
     footer {
@@ -118,7 +119,7 @@
       <h1>WRITING STYLE GUIDE</h1>
     </div>
     <button class="view-guide-btn" onclick="window.open('https://www.notion.so/firsthandlabs/Firsthand-Writing-Style-Guide-19a0efa8732880f69a79d3ea42dee27f', '_blank')">
-      View Full Style Guide
+      View Style Guide
     </button>
   </header>
 
@@ -126,8 +127,7 @@
     <div class="message bot">
       Welcome to the Firsthand Writing Style Guide Assistant! 
       I can help you with questions about our writing standards, voice and tone, grammar guidelines, and more. 
-      What would you like to know? <br><br>
-      <i>Tip: Type “FAQ” to see frequently asked questions.</i>
+      Type a question, or type <b>"show me FAQ"</b> to see all questions you can click.
     </div>
   </main>
 
@@ -140,8 +140,7 @@
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
 
-    // Full FAQ list
-    const faqs = [
+    const faq = [
       "How should titles and headers be capitalized?",
       "How should tooltips and placeholder text be capitalized?",
       "How should button text be capitalized?",
@@ -168,65 +167,52 @@
       "How should titles be formatted?"
     ];
 
-    // Append messages to chat
-    function appendMessage(text, sender, html = false) {
+    function appendMessage(text, sender) {
       const msg = document.createElement('div');
       msg.className = 'message ' + sender;
-      if (html) {
-        msg.innerHTML = text;
-      } else {
-        msg.textContent = text;
-      }
+      msg.textContent = text;
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Send message to webhook
-    async function sendMessage(customText) {
-      const text = (customText || input.value.trim());
-      if (!text) return;
+    function appendFAQ() {
+      faq.forEach(q => {
+        const msg = document.createElement('div');
+        msg.className = 'message user';
+        msg.textContent = q;
+        msg.onclick = () => sendQuery(q);
+        chat.appendChild(msg);
+      });
+      chat.scrollTop = chat.scrollHeight;
+    }
 
+    async function sendQuery(text) {
       appendMessage(text, 'user');
-      input.value = '';
-
-      // If user requests FAQ
-      if (text.toLowerCase().includes('faq')) {
-        showFAQ();
-        return;
-      }
-
       try {
-        const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
+        const res = await fetch('https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: text })
+          body: JSON.stringify({ query: text }) // always sends plain string
         });
-
-        // Handle non-JSON gracefully
-        const rawText = await res.text();
-        let data;
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          data = { answer: rawText || 'No answer found.' };
-        }
-
+        const data = await res.json();
         appendMessage(data.answer || 'No answer found.', 'bot');
       } catch (err) {
         appendMessage('Error reaching the server.', 'bot');
       }
     }
 
-    // Show clickable FAQ list
-    function showFAQ() {
-      let faqHTML = "<b>Here are some frequently asked questions:</b><br>";
-      faqs.forEach(q => {
-        faqHTML += `<div style="cursor:pointer; color:#3b82f6; margin:4px 0;" onclick="sendMessage('${q}')">${q}</div>`;
-      });
-      appendMessage(faqHTML, 'bot', true);
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      if (text.toLowerCase().includes('faq')) {
+        appendFAQ();
+      } else {
+        sendQuery(text);
+      }
     }
 
-    // Support Enter key to send
     input.addEventListener('keypress', function (e) {
       if (e.key === 'Enter') sendMessage();
     });
