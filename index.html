@@ -126,7 +126,8 @@
     <div class="message bot">
       Welcome to the Firsthand Writing Style Guide Assistant! 
       I can help you with questions about our writing standards, voice and tone, grammar guidelines, and more. 
-      What would you like to know?
+      What would you like to know? <br><br>
+      <i>Tip: Type “FAQ” to see frequently asked questions.</i>
     </div>
   </main>
 
@@ -139,37 +140,93 @@
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
 
-    function appendMessage(text, sender) {
+    // Full FAQ list
+    const faqs = [
+      "How should titles and headers be capitalized?",
+      "How should tooltips and placeholder text be capitalized?",
+      "How should button text be capitalized?",
+      "What case should field labels use?",
+      "How should capitalization be handled in lists and tables?",
+      "Are contractions allowed in writing?",
+      "How should numbers be written?",
+      "When should punctuation be used in tooltips or help text?",
+      "Should we use the Oxford comma?",
+      "Should optional plurals be shown with (s)?",
+      "How should formatting like bold and italics be used?",
+      "What tone should we use?",
+      "How should users be addressed?",
+      "How should button labels be formatted?",
+      "How should we write error messages?",
+      "How should we write confirmation or success messages?",
+      "What’s the format for help or instructional text?",
+      "What is the format for placeholder text?",
+      "How should tooltip content be written?",
+      "How should link text be written?",
+      "How are proper nouns handled?",
+      "How are identifiers displayed?",
+      "What format is used for dates?",
+      "How should titles be formatted?"
+    ];
+
+    // Append messages to chat
+    function appendMessage(text, sender, html = false) {
       const msg = document.createElement('div');
       msg.className = 'message ' + sender;
-      msg.textContent = text;
+      if (html) {
+        msg.innerHTML = text;
+      } else {
+        msg.textContent = text;
+      }
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    async function sendMessage() {
-      const text = input.value.trim();
+    // Send message to webhook
+    async function sendMessage(customText) {
+      const text = (customText || input.value.trim());
       if (!text) return;
 
       appendMessage(text, 'user');
       input.value = '';
 
+      // If user requests FAQ
+      if (text.toLowerCase().includes('faq')) {
+        showFAQ();
+        return;
+      }
+
       try {
         const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: text })
+          body: JSON.stringify({ query: text })
         });
 
-        if (!res.ok) throw new Error('Server error');
-        
-        const data = await res.json();
+        // Handle non-JSON gracefully
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          data = { answer: rawText || 'No answer found.' };
+        }
+
         appendMessage(data.answer || 'No answer found.', 'bot');
       } catch (err) {
         appendMessage('Error reaching the server.', 'bot');
       }
     }
 
+    // Show clickable FAQ list
+    function showFAQ() {
+      let faqHTML = "<b>Here are some frequently asked questions:</b><br>";
+      faqs.forEach(q => {
+        faqHTML += `<div style="cursor:pointer; color:#3b82f6; margin:4px 0;" onclick="sendMessage('${q}')">${q}</div>`;
+      });
+      appendMessage(faqHTML, 'bot', true);
+    }
+
+    // Support Enter key to send
     input.addEventListener('keypress', function (e) {
       if (e.key === 'Enter') sendMessage();
     });
