@@ -1,228 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Writing Style Guide Assistant</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background: #f9fafb;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
+<script>
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('userInput');
+  const tagsContainer = document.getElementById('tagsContainer');
+
+  // Example keyword tags
+  const keywordTags = [
+    "Capitalization","Contractions","Numbers","Punctuation","Oxford comma","Plurals","Text formatting","Tone","Voice","Buttons","Error messages","Confirmation or success messages","Help or instructional text","Placeholder text","Tooltips","Link text","Proper nouns","IDs","Dates","Titles and Headers","Labels","Lists","Tables"
+  ];
+
+  // Render tags on initial load
+  keywordTags.forEach(tag => {
+    const el = document.createElement('div');
+    el.className = 'tag';
+    el.textContent = tag;
+    el.onclick = () => {
+      appendMessage(tag, 'user');
+      sendQuery(tag);
+    };
+    tagsContainer.appendChild(el);
+  });
+
+  function appendMessage(text, sender) {
+    const msg = document.createElement('div');
+    msg.className = 'message ' + sender;
+
+    if (sender === 'bot') {
+      msg.innerHTML = marked.parse(text); // Render markdown for bot messages
+    } else {
+      msg.textContent = text;
     }
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+    return msg;
+  }
+
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendMessage(text, 'user');
+    input.value = '';
+    sendQuery(text);
+  }
+
+  async function sendQuery(query) {
+    // Add a loading message with simple animated dots
+    const loadingMsg = appendMessage('⏳ Thinking...', 'bot');
+    loadingMsg.classList.add('loading');
+
+    try {
+      const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: query })
+      });
+
+      if (!res.ok) throw new Error('Server error');
+      
+      const data = await res.json();
+      loadingMsg.remove(); // Remove loading message
+      appendMessage(data.answer || 'No answer found.', 'bot');
+    } catch (err) {
+      loadingMsg.remove(); // Remove loading message
+      appendMessage('Error reaching the server.', 'bot');
     }
+  }
 
-    header .logo {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    header h1 {
-      font-size: 1rem;
-      font-weight: 400;
-      color: #9CA3AF;
-      margin: 0;
-    }
-
-    .view-guide-btn {
-      background: white;
-      border: 1px solid #d1d5db;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      color: #374151;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .view-guide-btn:hover {
-      background: #f3f4f6;
-    }
-
-    main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .message {
-      max-width: 70%;
-      padding: 1rem;
-      border-radius: 0.75rem;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-
-    .message.bot {
-      align-self: flex-start;
-      background: #f3f4f6;
-      color: #111827;
-    }
-
-    .message.user {
-      align-self: flex-end;
-      background: #3b82f6;
-      color: white;
-    }
-
-    .tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .tag {
-      background: #e0f2fe;
-      color: #0369a1;
-      padding: 0.3rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .tag:hover {
-      background: #bae6fd;
-    }
-
-    footer {
-      display: flex;
-      gap: 0.5rem;
-      padding: 1rem;
-      background: white;
-      border-top: 1px solid #e5e7eb;
-    }
-
-    footer input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid #d1d5db;
-      font-size: 1rem;
-    }
-
-    footer button {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 0 1.25rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-size: 1.25rem;
-    }
-
-    footer button:hover {
-      background: #2563eb;
-    }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-<body>
-  <header>
-    <div class="logo">
-      <img src="https://raw.githubusercontent.com/chauconnie/styleguide/main/fh-logo.png" alt="Firsthand" width="200" height="56">
-      <h1>WRITING STYLE GUIDE</h1>
-    </div>
-    <button class="view-guide-btn" onclick="window.open('https://www.notion.so/firsthandlabs/Firsthand-Writing-Style-Guide-19a0efa8732880f69a79d3ea42dee27f', '_blank')">
-      View Full Style Guide
-    </button>
-  </header>
-
-  <main id="chat">
-    <div class="message bot">
-      I’m here to guide you through everything Firsthand writing—from our standards and voice to punctuation and formatting.
-      <br><br>
-      Pick a topic below or ask a question to get started.
-    </div>
-    <div class="tags-container" id="tagsContainer"></div>
-  </main>
-
-  <footer>
-    <input id="userInput" type="text" placeholder="Ask me about our writing style guide..." />
-    <button onclick="sendMessage()">&#10148;</button>
-  </footer>
-
-  <script>
-    const chat = document.getElementById('chat');
-    const input = document.getElementById('userInput');
-    const tagsContainer = document.getElementById('tagsContainer');
-
-    // Example keyword tags
-    const keywordTags = [
-      "Capitalization","Contractions","Numbers","Punctuation","Oxford comma","Plurals","Text formatting","Tone","Voice","Buttons","Error messages","Confirmation or success messages","Help or instructional text","Placeholder text","Tooltips","Link text","Proper nouns","IDs","Dates","Titles and Headers","Labels","Lists","Tables"
-    ];
-
-    // Render tags on initial load
-    keywordTags.forEach(tag => {
-      const el = document.createElement('div');
-      el.className = 'tag';
-      el.textContent = tag;
-      el.onclick = () => {
-        appendMessage(tag, 'user');
-        sendQuery(tag);
-      };
-      tagsContainer.appendChild(el);
-    });
-
-    function appendMessage(text, sender) {
-      const msg = document.createElement('div');
-      msg.className = 'message ' + sender;
-
-      if (sender === 'bot') {
-        msg.innerHTML = marked.parse(text); // Render markdown for bot messages
-      } else {
-        msg.textContent = text;
-      }
-
-      chat.appendChild(msg);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    async function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-
-      appendMessage(text, 'user');
-      input.value = '';
-      sendQuery(text);
-    }
-
-    async function sendQuery(query) {
-      try {
-        const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: query })
-        });
-
-        if (!res.ok) throw new Error('Server error');
-        
-        const data = await res.json();
-        appendMessage(data.answer || 'No answer found.', 'bot');
-      } catch (err) {
-        appendMessage('Error reaching the server.', 'bot');
-      }
-    }
-
-    input.addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') sendMessage();
-    });
-  </script>
-</body>
-</html>
+  input.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
