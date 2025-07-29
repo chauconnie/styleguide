@@ -109,27 +109,6 @@
     footer button:hover {
       background: #2563eb;
     }
-
-    .faq-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .faq-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      padding: 0.5rem 1rem;
-      text-align: left;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .faq-btn:hover {
-      background: #2563eb;
-    }
   </style>
 </head>
 <body>
@@ -139,7 +118,7 @@
       <h1>WRITING STYLE GUIDE</h1>
     </div>
     <button class="view-guide-btn" onclick="window.open('https://www.notion.so/firsthandlabs/Firsthand-Writing-Style-Guide-19a0efa8732880f69a79d3ea42dee27f', '_blank')">
-      View Full Style Guide
+      View Style Guide
     </button>
   </header>
 
@@ -147,7 +126,7 @@
     <div class="message bot">
       Welcome to the Firsthand Writing Style Guide Assistant! 
       I can help you with questions about our writing standards, voice and tone, grammar guidelines, and more. 
-      Type "FAQ" to see common questions.
+      What would you like to know?
     </div>
   </main>
 
@@ -159,42 +138,12 @@
   <script>
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
-    const WEBHOOK_URL = 'https://n8n-webhook.dev.firsthand.ai/webhook/search-guides';
-
-    const faqs = [
-      "How should titles and headers be capitalized?",
-      "How should tooltips and placeholder text be capitalized?",
-      "How should button text be capitalized?",
-      "What case should field labels use?",
-      "How should numbers be written?",
-      "What format is used for dates?"
-    ];
 
     function appendMessage(text, sender) {
       const msg = document.createElement('div');
       msg.className = 'message ' + sender;
       msg.textContent = text;
       chat.appendChild(msg);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    function showFAQButtons() {
-      const container = document.createElement('div');
-      container.className = 'faq-buttons';
-
-      faqs.forEach(faq => {
-        const btn = document.createElement('button');
-        btn.textContent = faq;
-        btn.className = 'faq-btn';
-        btn.onclick = () => {
-          appendMessage(faq, 'user');
-          sendQuery(faq); // send only one FAQ at a time
-          container.remove(); // remove buttons after click
-        };
-        container.appendChild(btn);
-      });
-
-      chat.appendChild(container);
       chat.scrollTop = chat.scrollHeight;
     }
 
@@ -205,25 +154,18 @@
       appendMessage(text, 'user');
       input.value = '';
 
-      if (text.toLowerCase() === 'faq') {
-        appendMessage("Here are some frequently asked questions:", 'bot');
-        showFAQButtons();
-        return;
-      }
-
-      sendQuery(text);
-    }
-
-    async function sendQuery(question) {
       try {
-        const res = await fetch(WEBHOOK_URL, {
+        const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: question })
+          body: JSON.stringify({ question: text })
         });
+
+        if (!res.ok) throw new Error('Server error');
+        
         const data = await res.json();
         appendMessage(data.answer || 'No answer found.', 'bot');
-      } catch {
+      } catch (err) {
         appendMessage('Error reaching the server.', 'bot');
       }
     }
