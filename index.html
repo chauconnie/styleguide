@@ -131,6 +131,7 @@
       background: #2563eb;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
   <header>
@@ -182,7 +183,13 @@
     function appendMessage(text, sender) {
       const msg = document.createElement('div');
       msg.className = 'message ' + sender;
-      msg.textContent = text;
+
+      if (sender === 'bot') {
+        msg.innerHTML = marked.parse(text); // Render markdown for bot messages
+      } else {
+        msg.textContent = text;
+      }
+
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
