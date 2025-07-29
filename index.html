@@ -80,6 +80,27 @@
       color: white;
     }
 
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tag {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .tag:hover {
+      background: #bae6fd;
+    }
+
     footer {
       display: flex;
       gap: 0.5rem;
@@ -128,6 +149,7 @@
       I can help you with questions about our writing standards, voice and tone, grammar guidelines, and more. 
       What would you like to know?
     </div>
+    <div class="tags-container" id="tagsContainer"></div>
   </main>
 
   <footer>
@@ -138,6 +160,25 @@
   <script>
     const chat = document.getElementById('chat');
     const input = document.getElementById('userInput');
+    const tagsContainer = document.getElementById('tagsContainer');
+
+    // Example keyword tags
+    const keywordTags = [
+      "Numbers", "Titles", "Headers", "Tooltips", "Placeholders", 
+      "Formatting", "Dates", "Tone", "Error messages"
+    ];
+
+    // Render tags on initial load
+    keywordTags.forEach(tag => {
+      const el = document.createElement('div');
+      el.className = 'tag';
+      el.textContent = tag;
+      el.onclick = () => {
+        appendMessage(tag, 'user');
+        sendQuery(tag);
+      };
+      tagsContainer.appendChild(el);
+    });
 
     function appendMessage(text, sender) {
       const msg = document.createElement('div');
@@ -153,12 +194,15 @@
 
       appendMessage(text, 'user');
       input.value = '';
+      sendQuery(text);
+    }
 
+    async function sendQuery(query) {
       try {
         const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: text })
+          body: JSON.stringify({ question: query })
         });
 
         if (!res.ok) throw new Error('Server error');
