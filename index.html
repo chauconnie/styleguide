@@ -158,7 +158,7 @@
         const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: text }) // ✅ match n8n's expected key
+          body: JSON.stringify({ question: text })
         });
 
         if (!res.ok) throw new Error('Server error');
