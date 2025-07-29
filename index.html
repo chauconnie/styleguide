@@ -134,16 +134,28 @@
     <input id="userInput" type="text" placeholder="Ask me about our writing style guide..." />
     <button onclick="sendMessage()">&#10148;</button>
   </footer>
+
   <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('userInput');
+
+    function appendMessage(text, sender) {
+      const msg = document.createElement('div');
+      msg.className = 'message ' + sender;
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
     async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
-    
+
       appendMessage(text, 'user');
       input.value = '';
-    
+
       try {
-        const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook-test/search-guides', {
+        const res = await fetch('https://corsproxy.io/?https://n8n-webhook.dev.firsthand.ai/webhook/search-guides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: text })
@@ -154,7 +166,11 @@
         appendMessage('Error reaching the server.', 'bot');
       }
     }
-    </script>
- 
+
+    // Send on Enter key
+    input.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
 </body>
 </html>
